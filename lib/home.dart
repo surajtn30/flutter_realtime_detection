@@ -22,7 +22,8 @@ class _HomePageState extends State<HomePage> {
   List<dynamic> _recognitions;
   int _imageHeight = 0;
   int _imageWidth = 0;
-  String _model = "";
+  int _camera = 0;
+  final stackKey = new GlobalKey<State>();
 
   @override
   void initState() {
@@ -31,28 +32,12 @@ class _HomePageState extends State<HomePage> {
 
   loadModel() async {
     String res;
-    switch (_model) {
-      case yolo:
-        res = await Tflite.loadModel(
-          model: "assets/yolov2_tiny.tflite",
-          labels: "assets/yolov2_tiny.txt",
-        );
-        break;
-      default:
-        res = await Tflite.loadModel(
-            model: "assets/ssd_mobilenet.tflite",
-            labels: "assets/ssd_mobilenet.txt");
-        break;
-    }
+    res = await Tflite.loadModel(
+        model: "assets/ssd_mobilenet.tflite",
+        labels: "assets/ssd_mobilenet.txt");
     print(res);
   }
 
-  onSelect(model) {
-    setState(() {
-      _model = model;
-    });
-    loadModel();
-  }
 
   setRecognitions(recognitions, imageHeight, imageWidth) {
     setState(() {
@@ -61,43 +46,49 @@ class _HomePageState extends State<HomePage> {
       _imageWidth = imageWidth;
     });
   }
+  flipCamera() {
+     setState((){if (_camera == 0){ _camera=1;} else {_camera=0;}});
+  }
 
   @override
   Widget build(BuildContext context) {
     Size screen = MediaQuery.of(context).size;
+    loadModel();
     return Scaffold(
-      body: _model == ""
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  RaisedButton(
-                    child: const Text(ssd),
-                    onPressed: () => onSelect(ssd),
-                  ),
-                  RaisedButton(
-                    child: const Text(yolo),
-                    onPressed: () => onSelect(yolo),
-                  ),
-                ],
-              ),
-            )
-          : Stack(
-              children: [
-                Camera(
-                  widget.cameras,
-                  _model,
-                  setRecognitions,
-                ),
-                BndBox(
-                  _recognitions == null ? [] : _recognitions,
-                  math.max(_imageHeight, _imageWidth),
-                  math.min(_imageHeight, _imageWidth),
-                  screen.height,
-                  screen.width,
-                ),
-              ],
-            ),
+      appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.menu),
+          tooltip: 'Navigation menu',
+          onPressed: null,
+        ),
+        title: Text('Flutter TFLite Demo'),
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.search),
+            tooltip: 'Search',
+            onPressed: null,
+          ),
+        ],
+      ),
+      body: Stack(
+        key: stackKey,
+        children: [
+          Camera(
+            widget.cameras,
+            ssd,
+            setRecognitions
+          ),
+          BndBox(
+            _recognitions == null ? [] : _recognitions,
+            math.max(_imageHeight, _imageWidth),
+            math.min(_imageHeight, _imageWidth),
+            screen.height,
+            screen.width,
+          ),
+
+        ],
+      ),
+
     );
   }
 }

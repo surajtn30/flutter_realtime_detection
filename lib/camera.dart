@@ -8,6 +8,7 @@ const String yolo = "Tiny YOLOv2";
 
 typedef void Callback(List<dynamic> list, int h, int w);
 
+
 class Camera extends StatefulWidget {
   final List<CameraDescription> cameras;
   final Callback setRecognitions;
@@ -22,54 +23,69 @@ class Camera extends StatefulWidget {
 class _CameraState extends State<Camera> {
   CameraController controller;
   bool isDetecting = false;
+  bool changeCamera = false;
+  int _camera = 0;
+
+
+  bool initCamera(camera){
+    controller = new CameraController(
+      widget.cameras[_camera],
+      ResolutionPreset.medium,
+    );
+
+
+    controller.initialize().then((_) {
+      if (!mounted) {
+        return false;
+      }
+
+
+      controller.startImageStream((CameraImage img) {
+        if (!isDetecting) {
+          isDetecting = true;
+
+
+          Tflite.detectObjectOnFrame(
+            bytesList: img.planes.map((plane) {
+              return plane.bytes;
+            }).toList(),
+            model: widget.model == yolo ? "YOLO" : "SSDMobileNet",
+            imageHeight: img.height,
+            imageWidth: img.width,
+            imageMean: widget.model == yolo ? 0 : 127.5,
+            imageStd: widget.model == yolo ? 255.0 : 127.5,
+            numResultsPerClass: 1,
+            threshold: widget.model == yolo ? 0.2 : 0.6,
+          ).then((recognitions) {
+            // print(recognitions);
+
+            widget.setRecognitions(recognitions, img.height, img.width);
+
+            isDetecting = false;
+          });
+        }
+      });
+    });
+    return true;
+
+  }
 
   @override
   void initState() {
     super.initState();
-
-    if (widget.cameras == null || widget.cameras.length < 1) {
+    print("Inside init state");
+    if (widget.cameras == null) {
       print('No camera is found');
+
     } else {
-      controller = new CameraController(
-        widget.cameras[0],
-        ResolutionPreset.medium,
-      );
-      controller.initialize().then((_) {
-        if (!mounted) {
-          return;
-        }
-        setState(() {});
+      if (initCamera(_camera)){
+        print("Init done");
 
-        controller.startImageStream((CameraImage img) {
-          if (!isDetecting) {
-            isDetecting = true;
+      }
+      else{
+        print("Camera error");
 
-            int startTime = new DateTime.now().millisecondsSinceEpoch;
-
-            Tflite.detectObjectOnFrame(
-              bytesList: img.planes.map((plane) {
-                return plane.bytes;
-              }).toList(),
-              model: widget.model == yolo ? "YOLO" : "SSDMobileNet",
-              imageHeight: img.height,
-              imageWidth: img.width,
-              imageMean: widget.model == yolo ? 0 : 127.5,
-              imageStd: widget.model == yolo ? 255.0 : 127.5,
-              numResultsPerClass: 1,
-              threshold: widget.model == yolo ? 0.2 : 0.4,
-            ).then((recognitions) {
-              // print(recognitions);
-
-              int endTime = new DateTime.now().millisecondsSinceEpoch;
-              print("Detection took ${endTime - startTime}");
-
-              widget.setRecognitions(recognitions, img.height, img.width);
-
-              isDetecting = false;
-            });
-          }
-        });
-      });
+      }
     }
   }
 
@@ -79,27 +95,60 @@ class _CameraState extends State<Camera> {
     super.dispose();
   }
 
+  void flipCamera(){
+    setState(() {
+      changeCamera = true;
+      _camera = _camera == 0 ? 1 :
+
+      0;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     if (controller == null || !controller.value.isInitialized) {
       return Container();
     }
+    if (changeCamera){
+      if (!initCamera(_camera)){
+        return Container();
+      }
+      changeCamera = false;
+    }
 
-    var tmp = MediaQuery.of(context).size;
-    var screenH = math.max(tmp.height, tmp.width);
-    var screenW = math.min(tmp.height, tmp.width);
-    tmp = controller.value.previewSize;
-    var previewH = math.max(tmp.height, tmp.width);
-    var previewW = math.min(tmp.height, tmp.width);
-    var screenRatio = screenH / screenW;
-    var previewRatio = previewH / previewW;
+    var currentSize = MediaQuery.of(context).size;
+    var previousSize = controller.value.previewSize;
 
-    return OverflowBox(
-      maxHeight:
-          screenRatio > previewRatio ? screenH : screenW / previewW * previewH,
-      maxWidth:
-          screenRatio > previewRatio ? screenH / previewH * previewW : screenW,
-      child: CameraPreview(controller),
-    );
+    if (currentSize != null && previousSize != null) {
+      var screenH = math.max(currentSize.height, currentSize.width);
+      var screenW = math.min(currentSize.height, currentSize.width);
+      var previewH = math.max(previousSize.height, previousSize.width);
+      var previewW = math.min(previousSize.height, previousSize.width);
+      var screenRatio = screenH / screenW;
+      var previewRatio = previewH / previewW;
+
+      return Scaffold(
+          body: OverflowBox(
+            maxHeight:
+            screenRatio > previewRatio ? screenH : screenW / previewW *
+                previewH,
+            maxWidth:
+            screenRatio > previewRatio
+                ? screenH / previewH * previewW
+                : screenW,
+            child:
+            CameraPreview(controller),
+
+          ),
+          floatingActionButton: FloatingActionButton(
+            tooltip: 'Change camera', // used by assistive technologies
+            child: _camera == 0 ? Icon(Icons.camera_front) : Icon(
+                Icons.camera_rear),
+            onPressed: flipCamera,
+          )
+      );
+    } else {
+      return Container();
+    }
   }
 }

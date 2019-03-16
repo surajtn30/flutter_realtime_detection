@@ -47,8 +47,8 @@ class BndBox extends StatelessWidget {
         }
 
         return Positioned(
-          left: math.max(0, x),
-          top: math.max(0, y),
+          left: math.max(0.0, x),
+          top: math.max(0.0, y),
           width: w,
           height: h,
           child: Container(
