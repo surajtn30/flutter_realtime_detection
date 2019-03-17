@@ -3,11 +3,10 @@ import 'package:camera/camera.dart';
 import 'package:tflite/tflite.dart';
 import 'dart:math' as math;
 
-import 'camera.dart';
+import 'objectdetection.dart';
 import 'bndbox.dart';
 
 const String ssd = "SSD MobileNet";
-const String yolo = "Tiny YOLOv2";
 
 class HomePage extends StatefulWidget {
   final List<CameraDescription> cameras;
@@ -22,8 +21,7 @@ class _HomePageState extends State<HomePage> {
   List<dynamic> _recognitions;
   int _imageHeight = 0;
   int _imageWidth = 0;
-  int _camera = 0;
-  final stackKey = new GlobalKey<State>();
+  int _selectedIndex = 0;
 
   @override
   void initState() {
@@ -46,10 +44,12 @@ class _HomePageState extends State<HomePage> {
       _imageWidth = imageWidth;
     });
   }
-  flipCamera() {
-     setState((){if (_camera == 0){ _camera=1;} else {_camera=0;}});
-  }
 
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
   @override
   Widget build(BuildContext context) {
     Size screen = MediaQuery.of(context).size;
@@ -71,9 +71,8 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: Stack(
-        key: stackKey,
         children: [
-          Camera(
+          ObjectDetection(
             widget.cameras,
             ssd,
             setRecognitions
@@ -85,10 +84,18 @@ class _HomePageState extends State<HomePage> {
             screen.height,
             screen.width,
           ),
-
         ],
       ),
-
+      bottomNavigationBar: BottomNavigationBar(
+        items: <BottomNavigationBarItem>[
+          BottomNavigationBarItem(icon: Icon(Icons.account_box), title: Text('Object Detection')),
+          BottomNavigationBarItem(icon: Icon(Icons.supervisor_account), title: Text('Classification')),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), title: Text('Settings')),
+        ],
+        currentIndex: _selectedIndex,
+        fixedColor: Colors.deepPurple,
+        onTap: _onItemTapped,
+      ),
     );
   }
 }

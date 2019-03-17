@@ -9,18 +9,18 @@ const String yolo = "Tiny YOLOv2";
 typedef void Callback(List<dynamic> list, int h, int w);
 
 
-class Camera extends StatefulWidget {
+class ObjectDetection extends StatefulWidget {
   final List<CameraDescription> cameras;
   final Callback setRecognitions;
   final String model;
 
-  Camera(this.cameras, this.model, this.setRecognitions);
+  ObjectDetection(this.cameras, this.model, this.setRecognitions);
 
   @override
-  _CameraState createState() => new _CameraState();
+  _ObjectDetectionState createState() => new _ObjectDetectionState();
 }
 
-class _CameraState extends State<Camera> {
+class _ObjectDetectionState extends State<ObjectDetection> {
   CameraController controller;
   bool isDetecting = false;
   bool changeCamera = false;
@@ -49,18 +49,15 @@ class _CameraState extends State<Camera> {
             bytesList: img.planes.map((plane) {
               return plane.bytes;
             }).toList(),
-            model: widget.model == yolo ? "YOLO" : "SSDMobileNet",
+            model: "SSDMobileNet",
             imageHeight: img.height,
             imageWidth: img.width,
-            imageMean: widget.model == yolo ? 0 : 127.5,
-            imageStd: widget.model == yolo ? 255.0 : 127.5,
+            imageMean: 127.5,
+            imageStd: 127.5,
             numResultsPerClass: 1,
-            threshold: widget.model == yolo ? 0.2 : 0.6,
+            threshold: 0.6,
           ).then((recognitions) {
-            // print(recognitions);
-
             widget.setRecognitions(recognitions, img.height, img.width);
-
             isDetecting = false;
           });
         }
