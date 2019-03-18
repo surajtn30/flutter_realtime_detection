@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:tflite/tflite.dart';
 import 'dart:math' as math;
 
 import 'objectdetection.dart';
+import 'classification.dart';
 import 'bndbox.dart';
 
-const String ssd = "SSD MobileNet";
+
 
 class HomePage extends StatefulWidget {
   final List<CameraDescription> cameras;
@@ -18,7 +18,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<dynamic> _recognitions;
+  List<dynamic> _objectDetectionRecognitions;
   int _imageHeight = 0;
   int _imageWidth = 0;
   int _selectedIndex = 0;
@@ -28,39 +28,52 @@ class _HomePageState extends State<HomePage> {
     super.initState();
   }
 
-  loadModel() async {
-    String res;
-    res = await Tflite.loadModel(
-        model: "assets/ssd_mobilenet.tflite",
-        labels: "assets/ssd_mobilenet.txt");
-    print(res);
-  }
 
-
-  setRecognitions(recognitions, imageHeight, imageWidth) {
+  setObjectDetections(recognitions, imageHeight, imageWidth) {
     setState(() {
-      _recognitions = recognitions;
+      _objectDetectionRecognitions = recognitions;
       _imageHeight = imageHeight;
       _imageWidth = imageWidth;
     });
   }
+
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
   }
+
+  List<Widget> navBarChildren(screen, selectedIndex) {
+    switch (selectedIndex) {
+      case 0: return [
+        ObjectDetection(
+            widget.cameras,
+            setObjectDetections
+        ),
+        BndBox(
+          _objectDetectionRecognitions == null
+              ? []
+              : _objectDetectionRecognitions,
+          math.max(_imageHeight, _imageWidth),
+          math.min(_imageHeight, _imageWidth),
+          screen.height,
+          screen.width,
+        ),
+      ];
+      case 1: return [
+        Classification(
+          widget.cameras
+        ),
+      ];
+      default: return [Container()];
+  }
+  }
   @override
   Widget build(BuildContext context) {
     Size screen = MediaQuery.of(context).size;
-    loadModel();
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.menu),
-          tooltip: 'Navigation menu',
-          onPressed: null,
-        ),
         title: Text('Flutter TFLite Demo'),
         actions: <Widget>[
           IconButton(
@@ -71,20 +84,7 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: Stack(
-        children: [
-          ObjectDetection(
-            widget.cameras,
-            ssd,
-            setRecognitions
-          ),
-          BndBox(
-            _recognitions == null ? [] : _recognitions,
-            math.max(_imageHeight, _imageWidth),
-            math.min(_imageHeight, _imageWidth),
-            screen.height,
-            screen.width,
-          ),
-        ],
+        children: navBarChildren(screen, _selectedIndex),
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: <BottomNavigationBarItem>[
@@ -93,7 +93,7 @@ class _HomePageState extends State<HomePage> {
           BottomNavigationBarItem(icon: Icon(Icons.settings), title: Text('Settings')),
         ],
         currentIndex: _selectedIndex,
-        fixedColor: Colors.deepPurple,
+        fixedColor: Colors.teal,
         onTap: _onItemTapped,
       ),
     );

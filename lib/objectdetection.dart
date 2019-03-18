@@ -4,7 +4,6 @@ import 'package:tflite/tflite.dart';
 import 'dart:math' as math;
 
 const String ssd = "SSD MobileNet";
-const String yolo = "Tiny YOLOv2";
 
 typedef void Callback(List<dynamic> list, int h, int w);
 
@@ -12,9 +11,9 @@ typedef void Callback(List<dynamic> list, int h, int w);
 class ObjectDetection extends StatefulWidget {
   final List<CameraDescription> cameras;
   final Callback setRecognitions;
-  final String model;
+  final String model = ssd;
 
-  ObjectDetection(this.cameras, this.model, this.setRecognitions);
+  ObjectDetection(this.cameras, this.setRecognitions);
 
   @override
   _ObjectDetectionState createState() => new _ObjectDetectionState();
@@ -26,6 +25,13 @@ class _ObjectDetectionState extends State<ObjectDetection> {
   bool changeCamera = false;
   int _camera = 0;
 
+  loadModel() async {
+    String res;
+    res = await Tflite.loadModel(
+        model: "assets/ssd_mobilenet.tflite",
+        labels: "assets/ssd_mobilenet.txt");
+    print(res);
+  }
 
   bool initCamera(camera){
     controller = new CameraController(
@@ -70,25 +76,22 @@ class _ObjectDetectionState extends State<ObjectDetection> {
   @override
   void initState() {
     super.initState();
+    loadModel();
     print("Inside init state");
     if (widget.cameras == null) {
       print('No camera is found');
-
     } else {
       if (initCamera(_camera)){
         print("Init done");
-
       }
       else{
         print("Camera error");
-
       }
     }
   }
 
   @override
   void dispose() {
-    controller?.dispose();
     super.dispose();
   }
 
