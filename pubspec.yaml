@@ -15,6 +15,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  shared_preferences: 0.5.1+2
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -47,6 +48,7 @@ flutter:
    - assets/ssd_mobilenet.txt
    - assets/labels_mobilenet_quant_v1_224.txt
    - assets/mobilenet_v1_1.0_224_quant.tflite
+   - assets/mobilenet_v1_1.0_224.tflite
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.io/assets-and-images/#resolution-aware.

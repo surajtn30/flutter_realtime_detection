@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'objectdetection.dart';
 import 'classification.dart';
+import 'settings.dart';
 import 'bndbox.dart';
 
 
@@ -21,7 +22,7 @@ class _HomePageState extends State<HomePage> {
   List<dynamic> _objectDetectionRecognitions;
   int _imageHeight = 0;
   int _imageWidth = 0;
-  int _selectedIndex = 0;
+  int _selectedIndex = 1;
 
   @override
   void initState() {
@@ -65,6 +66,9 @@ class _HomePageState extends State<HomePage> {
         Classification(
           widget.cameras
         ),
+      ];
+      case 2: return [
+        SettingsForm()
       ];
       default: return [Container()];
   }
