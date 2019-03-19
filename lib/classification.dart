@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:tflite/tflite.dart';
 import 'dart:math' as math;
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 typedef void Callback(List<dynamic> list);
 
@@ -21,6 +23,7 @@ class _ClassificationState extends State<Classification> {
   bool changeCamera = false;
   int _camera = 0;
   List<dynamic> _recognitions = [];
+  double _classificationThreshold = 0.6;
 
   loadModel() async {
     String res = await Tflite.loadModel(
@@ -28,6 +31,8 @@ class _ClassificationState extends State<Classification> {
         labels: "assets/labels_mobilenet_quant_v1_224.txt",
     );
     print(res);
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    _classificationThreshold = (prefs.getDouble('classificationThreshold') ?? 0.6);
   }
 
   bool initCamera(camera){
@@ -102,10 +107,35 @@ class _ClassificationState extends State<Classification> {
   }
 
   Widget showResults(recognitions){
-    if (recognitions.isEmpty || (recognitions[0]["confidence"] < 0.4)){
-      return Row(children:[Text("No relevant results")]);
+    if (recognitions.isEmpty || (recognitions[0]["confidence"] < _classificationThreshold)){
+      return Row(
+          children:[
+            FlatButton(
+                child: Text('Keep looking...'),
+                onPressed:null
+            )
+          ]
+      );
     } else{
-      return Row(children:[Text(recognitions[0]["label"] + " - "+ recognitions[0]["confidence"].toString())]);
+      return Row(
+          children: [
+            FlatButton(
+              child: Row(
+                children:[
+                  Padding(
+                    padding: EdgeInsets.only(right: 40.0),
+                    child: Text(
+                    recognitions[0]['label'],
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  )
+                  ),
+                  Text("Confidence:" + (recognitions[0]['confidence']*100).toStringAsPrecision(2)+"%"),
+              ]
+              ),
+              onPressed: null,
+            )
+          ]
+      );
     }
   }
 
@@ -123,8 +153,6 @@ class _ClassificationState extends State<Classification> {
 
     var currentSize = MediaQuery.of(context).size;
     var previousSize = controller.value.previewSize;
-    print("In build");
-    print("Recognitions - $_recognitions");
     if (currentSize != null && previousSize != null) {
       var screenH = math.max(currentSize.height, currentSize.width);
       var screenW = math.min(currentSize.height, currentSize.width);

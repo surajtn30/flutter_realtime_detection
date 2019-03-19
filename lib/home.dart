@@ -97,7 +97,6 @@ class _HomePageState extends State<HomePage> {
           BottomNavigationBarItem(icon: Icon(Icons.settings), title: Text('Settings')),
         ],
         currentIndex: _selectedIndex,
-        fixedColor: Colors.teal,
         onTap: _onItemTapped,
       ),
     );

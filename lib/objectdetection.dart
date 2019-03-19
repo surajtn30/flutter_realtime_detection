@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:tflite/tflite.dart';
 import 'dart:math' as math;
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 const String ssd = "SSD MobileNet";
 
@@ -24,6 +26,7 @@ class _ObjectDetectionState extends State<ObjectDetection> {
   bool isDetecting = false;
   bool changeCamera = false;
   int _camera = 0;
+  double _objectDetectionThreshold = 0.6;
 
   loadModel() async {
     String res;
@@ -31,6 +34,8 @@ class _ObjectDetectionState extends State<ObjectDetection> {
         model: "assets/ssd_mobilenet.tflite",
         labels: "assets/ssd_mobilenet.txt");
     print(res);
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    _objectDetectionThreshold = (prefs.getDouble('objectDetectionThreshold') ?? 0.6);
   }
 
   bool initCamera(camera){
@@ -61,7 +66,7 @@ class _ObjectDetectionState extends State<ObjectDetection> {
             imageMean: 127.5,
             imageStd: 127.5,
             numResultsPerClass: 1,
-            threshold: 0.6,
+            threshold: _objectDetectionThreshold,
           ).then((recognitions) {
             widget.setRecognitions(recognitions, img.height, img.width);
             isDetecting = false;

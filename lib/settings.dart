@@ -12,32 +12,77 @@ class SettingsForm extends StatefulWidget {
 }
 
 class _SettingsFormState extends State<SettingsForm> {
-  double _objectDetectionThreshold = 0.6;
-  double _classificationThreshold = 0.6;
+  double _objectDetectionThreshold = 0.0;
+  double _classificationThreshold = 0.0;
 
-  getObjectDetectionThreshold() async{
+  getDoublePreference() async{
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    _objectDetectionThreshold = (prefs.getDouble('objectDetectionThreshold') ?? 0.6);
-    _classificationThreshold = (prefs.getDouble('classificationThreshold') ?? 0.6);
+    setState(() {
+      _objectDetectionThreshold = (prefs.getDouble('objectDetectionThreshold') ?? 0.6);
+      _classificationThreshold = (prefs.getDouble('classificationThreshold') ?? 0.6);
+    });
   }
 
   @override
-  Widget build(BuildContext context) {
-    getObjectDetectionThreshold();
-    return Column(
+  Widget build(BuildContext context){
+    getDoublePreference();
+    return ListView(
       children:[
-        Row(
-          children:[
-            Text("Object Detection Threshold:"),
-            Text("$_objectDetectionThreshold"),
-          ]
-        ),
-        Row(
+        Card(
+          child: Column(
             children:[
-              Text("Classfication Threshold:"),
-              Text("$_classificationThreshold"),
+              ListTile(
+                leading: Icon(Icons.account_box),
+                title: Text('Object Detection Threshold'),
+                subtitle: Text('Confidence threshold for object detection'),
+              ),
+                ButtonTheme.bar(
+                 // make buttons use the appropriate styles for cards
+                 child: ButtonBar(
+                 children: <Widget>[
+                  Slider(
+                      min: 0.0,
+                      max: 1.0,
+                      onChanged: (newRating) async{
+                        SharedPreferences prefs = await SharedPreferences.getInstance();
+                        setState(() => _objectDetectionThreshold = newRating);
+                        await prefs.setDouble('objectDetectionThreshold', _objectDetectionThreshold);
+                      },
+                      value: _objectDetectionThreshold),
+                      Text((_objectDetectionThreshold*100).toStringAsPrecision(2)+"%"),
             ]
-        )
+          )
+          )]
+          )
+        ),
+        Card(
+            child: Column(
+                children:[
+                  ListTile(
+                    leading: Icon(Icons.supervisor_account),
+                    title: Text('Classification Threshold'),
+                    subtitle: Text('Confidence threshold for classification'),
+                  ),
+                  ButtonTheme.bar(
+                    // make buttons use the appropriate styles for cards
+                      child: ButtonBar(
+                          children: <Widget>[
+                             Slider(
+                               min: 0.0,
+                               max: 1.0,
+                               onChanged: (newRating) async{
+                                 SharedPreferences prefs = await SharedPreferences.getInstance();
+                                 setState(() => _classificationThreshold = newRating);
+                                 await prefs.setDouble('classificationThreshold', _classificationThreshold);
+                               },
+                               value: _classificationThreshold),
+                             Text((_classificationThreshold*100).toStringAsPrecision(2)+"%")
+                          ]
+                      )
+                  )
+                ]
+            )
+        ),
       ]
     );
   }
